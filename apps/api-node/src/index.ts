@@ -9,7 +9,7 @@ async function start() {
   const app = express();
   const server = new ApolloServer({ typeDefs, resolvers });
   await server.start();
-  server.applyMiddleware({ app });
+  server.applyMiddleware({ app: app as any });
   app.listen(4000, () =>
     console.log(`▶️  API ready at http://localhost:4000${server.graphqlPath}`)
   );
