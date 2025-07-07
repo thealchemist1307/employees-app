@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 # Install production dependencies
 COPY package-lock.json ./
 COPY apps/api-node/package*.json ./
-RUN npm ci --production
+RUN npm ci
 
 # Copy root TS config base for monorepo
 COPY tsconfig.base.json /usr/tsconfig.base.json
