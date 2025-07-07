@@ -125,7 +125,7 @@ This project uses GitHub Actions for automated build and deployment on push to t
 ---
 
 ## Running on a Custom Port & CORS
-- The backend is configured to run on port **4000** (as set in `docker-compose.yml`).
+- The backend is configured to run on port **4700** (as set in `docker-compose.yml`).
 - CORS is enabled for:
   - `https://employeesapp.shauqtechnology.in`
 
