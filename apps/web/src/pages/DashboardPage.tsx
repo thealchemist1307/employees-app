@@ -2,7 +2,6 @@ import * as React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
 import { LayoutGrid, Rows, Loader2, Plus, MoreVertical, Search } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { apiClient } from "@/lib/api";
@@ -21,39 +20,6 @@ const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 const VIEW_MODE_KEY = "employeeViewMode";
 
 type EmployeeInputWithRole = EmployeeInput & { role: "ADMIN" | "EMPLOYEE" };
-
-function EmployeeTable({ employees }: { employees: Employee[] }) {
-  return (
-    <div className="overflow-x-auto rounded border bg-white">
-      <table className="min-w-full text-sm">
-        <thead>
-          <tr className="bg-slate-100">
-            <th className="px-3 py-2 text-left">Name</th>
-            <th className="px-3 py-2 text-left">Email</th>
-            <th className="px-3 py-2 text-left">Phone</th>
-            <th className="px-3 py-2 text-left">Company</th>
-            <th className="px-3 py-2 text-left">Department</th>
-            <th className="px-3 py-2 text-left">Position</th>
-            <th className="px-3 py-2 text-left">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map((emp, i) => (
-            <tr key={i} className="border-t hover:bg-slate-100 transition-colors duration-150">
-              <td className="px-3 py-2">{emp.firstName} {emp.lastName}</td>
-              <td className="px-3 py-2">{emp.email}</td>
-              <td className="px-3 py-2">{emp.phone}</td>
-              <td className="px-3 py-2">{emp.company}</td>
-              <td className="px-3 py-2">{emp.department}</td>
-              <td className="px-3 py-2">{emp.position}</td>
-              <td className="px-3 py-2">{emp.status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 function EmployeeTiles({ employees, onCardClick }: { employees: Employee[]; onCardClick: (emp: Employee) => void }) {
   const { user } = useAuth();
@@ -104,8 +70,7 @@ function delay<T>(ms: number, value: T): Promise<T> {
 }
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [view, setView] = React.useState<'grid' | 'tiles'>(() => {
     const saved = localStorage.getItem(VIEW_MODE_KEY);
     return saved === 'grid' || saved === 'tiles' ? saved : 'grid';
@@ -115,8 +80,6 @@ export default function DashboardPage() {
   const [pageSize, setPageSize] = React.useState(10);
   const [sortField, setSortField] = React.useState<keyof Employee>("updated");
   const [sortDir, setSortDir] = React.useState<SortDir>("desc");
-  const [tilePage, setTilePage] = React.useState(1);
-  const tilePageSize = 12;
   const [detailOpen, setDetailOpen] = React.useState(false);
   const [selectedEmployee, setSelectedEmployee] = React.useState<Employee | null>(null);
   const queryClient = useQueryClient();
@@ -147,7 +110,7 @@ export default function DashboardPage() {
     ] : [])
   ];
 
-  const { data, isLoading, error, isFetching } = useQuery<EmployeesPageResult, Error>({
+  const { data, isLoading, error } = useQuery<EmployeesPageResult, Error>({
     queryKey: ["employees", page, pageSize, search, sortField, sortDir],
     queryFn: () => apiClient.getEmployees(page, pageSize, sortField as string, sortDir, search),
   });
@@ -155,13 +118,12 @@ export default function DashboardPage() {
   const {
     data: tileData,
     isLoading: tileLoading,
-    isFetching: tileFetching,
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery<EmployeesPageResult, Error>({
     queryKey: ["employees-tile", search, sortField, sortDir],
     queryFn: async ({ pageParam }) => {
-      const data = await apiClient.getEmployees((pageParam as number) ?? 1, tilePageSize, sortField as string, sortDir, search);
+      const data = await apiClient.getEmployees((pageParam as number) ?? 1, pageSize, sortField as string, sortDir, search);
       return delay(400, data);
     },
     initialPageParam: 1,
@@ -179,7 +141,6 @@ export default function DashboardPage() {
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   const tileEmployees: Employee[] = (tileData as InfiniteData<EmployeesPageResult> | undefined)?.pages.flatMap((p) => p.items) ?? [];
-  const tileTotal: number = (tileData as InfiniteData<EmployeesPageResult> | undefined)?.pages[0]?.total ?? 0;
 
   // Deduplicate employees by id for tile view
   const uniqueTileEmployees = tileEmployees.filter(
@@ -240,7 +201,7 @@ export default function DashboardPage() {
     const onScroll = () => {
       if (
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
-        !tileLoading && !tileFetching && hasNextPage
+        !tileLoading && hasNextPage
       ) {
         fetchNextPage();
       }
@@ -250,14 +211,14 @@ export default function DashboardPage() {
     function autoFetchIfNeeded() {
       if (
         document.body.scrollHeight <= window.innerHeight + 100 &&
-        !tileLoading && !tileFetching && hasNextPage
+        !tileLoading && hasNextPage
       ) {
         fetchNextPage();
       }
     }
     autoFetchIfNeeded();
     return () => window.removeEventListener("scroll", onScroll);
-  }, [view, tileLoading, tileFetching, hasNextPage, fetchNextPage, tileEmployees.length]);
+  }, [view, tileLoading, hasNextPage, fetchNextPage, tileEmployees.length]);
 
   React.useEffect(() => {
     localStorage.setItem(VIEW_MODE_KEY, view);
@@ -429,7 +390,7 @@ export default function DashboardPage() {
             <>
               <div className="mb-2 text-sm text-gray-600">Total cards rendered: {uniqueTileEmployees.length}</div>
               <EmployeeTiles employees={uniqueTileEmployees} onCardClick={(emp) => { setSelectedEmployee(emp); setDetailOpen(true); }} />
-              {(tileLoading || tileFetching) && (
+              {(tileLoading) && (
                 <div className="flex flex-col items-center py-8">
                   <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
                   <span className="mt-2 text-blue-700 font-medium">Loading more…</span>

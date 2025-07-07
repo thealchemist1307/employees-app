@@ -1,4 +1,3 @@
-import * as React from "react"
 import { useState } from "react";
 import { Menu, ChevronDown, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";

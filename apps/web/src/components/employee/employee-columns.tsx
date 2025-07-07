@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import type { Employee } from "@/lib/api";
 
 export const employeeColumns: ColumnDef<Employee>[] = [
-  { accessorKey: "name", header: "Name" },
+  { accessorKey: "firstName", header: "First Name" },
+  { accessorKey: "lastName", header: "Last Name" },
   { accessorKey: "email", header: "Email" },
   { accessorKey: "phone", header: "Phone" },
   {
@@ -19,7 +20,7 @@ export const employeeColumns: ColumnDef<Employee>[] = [
         <Button 
           size="sm" 
           variant="outline" 
-          onClick={() => alert(`Edit ${row.original.name}`)}
+          onClick={() => alert(`Edit ${row.original.firstName} ${row.original.lastName}`)}
           className="hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700"
         >
           Edit
@@ -27,7 +28,7 @@ export const employeeColumns: ColumnDef<Employee>[] = [
         <Button 
           size="sm" 
           variant="destructive" 
-          onClick={() => alert(`Delete ${row.original.name}`)}
+          onClick={() => alert(`Delete ${row.original.firstName} ${row.original.lastName}`)}
           className="hover:bg-red-600 hover:border-red-600"
         >
           Delete

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import type { Employee } from "@/lib/api";
 import { stringToInitials } from "@/lib/utils";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface EmployeeDetailDialogProps {

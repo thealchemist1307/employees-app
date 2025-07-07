@@ -3,8 +3,6 @@ import type { Employee } from "@/lib/api";
 import { EmployeeCard } from "./EmployeeCard";
 import { EmployeeDetailDialog } from "./EmployeeDetailDialog";
 
-const PAGE_SIZE = 12;
-
 type Props = {
   employees: Employee[];
   onEdit: (emp: Employee) => void;
