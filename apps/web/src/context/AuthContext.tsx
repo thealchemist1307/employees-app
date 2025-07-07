@@ -1,40 +1,69 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { apiClient, type User, type LoginInput } from "@/lib/api";
 
-type User = { name: string } | null;
 type AuthCtx = {
-  user: User;
-  login: (name: string) => void;
+  user: User | null;
+  login: (input: LoginInput) => Promise<void>;
   logout: () => void;
+  isLoading: boolean;
 };
 
 const AuthContext = createContext<AuthCtx | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User>(() => {
+  const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem("user");
-    return stored ? JSON.parse(stored) : null;
+    const token = localStorage.getItem("token");
+    if (stored && token) {
+      apiClient.setToken(token);
+      return JSON.parse(stored);
+    }
+    return null;
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const login = (name: string) => {
-    const u = { name };
-    setUser(u);
-    localStorage.setItem("user", JSON.stringify(u));
+  const login = async (input: LoginInput) => {
+    setIsLoading(true);
+    try {
+      const result = await apiClient.login(input);
+      setUser(result.user);
+      apiClient.setToken(result.token);
+      localStorage.setItem("user", JSON.stringify(result.user));
+      localStorage.setItem("token", result.token);
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logout = () => {
     setUser(null);
+    apiClient.setToken(null);
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   useEffect(() => {
     // keep other tabs in sync
-    const onStorage = () => setUser(localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")!) : null);
+    const onStorage = () => {
+      const stored = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+      if (stored && token) {
+        apiClient.setToken(token);
+        setUser(JSON.parse(stored));
+      } else {
+        setUser(null);
+        apiClient.setToken(null);
+      }
+    };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

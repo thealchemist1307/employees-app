@@ -1,3 +1,6 @@
+// debug log
+console.log("→ DATABASE_URL:", process.env.DATABASE_URL);
+
 import { gql } from "apollo-server-express";
 import { PrismaClient } from "@prisma/client";
 import {
@@ -43,9 +46,9 @@ export const typeDefs = gql`
     location: String!
     dateOfBirth: String!
     status: String!
-    flagged: Boolean!
-    created: String!
-    updated: String!
+    flagged: Boolean
+    created: String
+    updated: String
   }
 
   type AuthPayload {
@@ -53,12 +56,19 @@ export const typeDefs = gql`
     user: User!
   }
 
+  type EmployeesPage {
+    items: [Employee!]!
+    total: Int!
+  }
+
   type Query {
     me: User
     employees(
+      page: Int = 1
+      size: Int = 10
       sortField: SortField = name
       sortDir: SortDir = asc
-    ): [Employee!]!
+    ): EmployeesPage!
     employee(id: ID!): Employee
   }
 
@@ -119,16 +129,36 @@ export const resolvers = {
       return prisma.user.findUnique({ where: { id: ctx.user!.userId } });
     },
 
-    employees: (
+    employees: async (
       _: unknown,
-      { sortField = "name", sortDir = "asc" }: { sortField: SortFieldString; sortDir: SortDirString },
+      {
+        page = 1,
+        size = 10,
+        sortField = "name",
+        sortDir = "asc",
+      }: {
+        page: number;
+        size: number;
+        sortField: SortFieldString;
+        sortDir: SortDirString;
+      },
       ctx: Context
     ) => {
       assertAuth(ctx);
+
       if (!SORT_FIELDS.includes(sortField) || !SORT_DIRECTIONS.includes(sortDir)) {
         throw new Error("Invalid sort parameters");
       }
-      return prisma.employee.findMany({ orderBy: { [sortField]: sortDir } });
+      const skip = (page - 1) * size;
+      const [items, total] = await Promise.all([
+        prisma.employee.findMany({
+          skip,
+          take: size,
+          orderBy: { [sortField]: sortDir },
+        }),
+        prisma.employee.count(),
+      ]);
+      return { items, total };
     },
 
     employee: (_: unknown, { id }: { id: number }, ctx: Context) => {
@@ -190,7 +220,20 @@ export const resolvers = {
   /* ---------- Field Serialisers ---------- */
   Employee: {
     dateOfBirth: (e: any) => e.dateOfBirth.toISOString(),
-    created:     (e: any) => e.created.toISOString(),
-    updated:     (e: any) => e.updated.toISOString(),
+    created: (e: any, _: unknown, ctx: Context) => {
+      // Only show created date to admins
+      if (ctx.user?.role !== "ADMIN") return null;
+      return e.created.toISOString();
+    },
+    updated: (e: any, _: unknown, ctx: Context) => {
+      // Only show updated date to admins
+      if (ctx.user?.role !== "ADMIN") return null;
+      return e.updated.toISOString();
+    },
+    flagged: (e: any, _: unknown, ctx: Context) => {
+      // Only show flagged status to admins
+      if (ctx.user?.role !== "ADMIN") return null;
+      return e.flagged;
+    },
   },
 }; 

@@ -4,13 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: ""
   });
-  const { login } = useAuth();
+  const [error, setError] = useState("");
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,11 +23,20 @@ export default function LoginPage() {
     }));
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (formData.username.trim() && formData.password.trim()) {
-      login(formData.username.trim());
-      navigate("/dashboard");
+    setError("");
+    
+    if (formData.email.trim() && formData.password.trim()) {
+      try {
+        await login({
+          email: formData.email.trim(),
+          password: formData.password
+        });
+        navigate("/dashboard");
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "Login failed");
+      }
     }
   };
 
@@ -39,15 +50,15 @@ export default function LoginPage() {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="username" className="text-sm font-medium text-white">
-              Username
+            <label htmlFor="email" className="text-sm font-medium text-white">
+              Email
             </label>
             <Input
-              id="username"
-              name="username"
-              type="text"
-              placeholder="Enter your username"
-              value={formData.username}
+              id="email"
+              name="email"
+              type="email"
+              placeholder="Enter your email"
+              value={formData.email}
               onChange={handleInputChange}
               className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500"
               required
@@ -72,15 +83,31 @@ export default function LoginPage() {
           
                   <Button 
           type="submit" 
+          disabled={isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 hover:shadow-md transition-all duration-200"
         >
-          Sign In
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing In...
+            </>
+          ) : (
+            "Sign In"
+          )}
         </Button>
+        
+        {error && (
+          <div className="text-center">
+            <p className="text-xs text-red-400">
+              {error}
+            </p>
+          </div>
+        )}
         </form>
         
         <div className="text-center">
           <p className="text-xs text-slate-400">
-            Demo: Enter any username and password to continue
+            Use your registered email and password to sign in
           </p>
         </div>
       </div>

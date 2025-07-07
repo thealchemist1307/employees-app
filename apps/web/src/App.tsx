@@ -4,7 +4,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import { PrivateRoute } from "@/components/routes/PrivateRoute";
 import LoginPage from "@/pages/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
-import EmployeesPage from "@/pages/EmployeesPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -23,17 +22,6 @@ export default function App() {
                   <>
                     <Header />
                     <DashboardPage />
-                  </>
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/employees"
-              element={
-                <PrivateRoute>
-                  <>
-                    <Header />
-                    <EmployeesPage />
                   </>
                 </PrivateRoute>
               }
