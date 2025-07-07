@@ -1,61 +1,43 @@
 # docker-compose.yml (root)
 
+version: "3.9"
+
 services:
-  # ───────────────────────────────────────────────────────────────
-  #  Node.js API + Static UI
-  # ───────────────────────────────────────────────────────────────
+  # Node.js API + Static UI
   backend:
     container_name: employees-backend
 
     build:
-      context: .                          # repo root
+      context: .
       dockerfile: apps/api-node/Dockerfile
       args:
         NODE_ENV: production
 
-    # Map container's 4000 → host's 4700
+    # Map container’s 4000 → host’s 4700
     ports:
       - "4700:4000"
 
-    # Environment variables come from the runner's
-    # process environment or the project‑root .env file (loaded automatically by Compose).
+    # Environment variables connect to the *existing* Postgres container
     environment:
       NODE_ENV: production
-      PORT: 4000   # Express listening port inside the container
-      # Add any other vars here, or set them as GH Actions secrets and
-      # export before running `docker compose`.
+      PORT: 4000
+      DB_HOST: employees-db          # name of the already‑running DB container
+      DB_PORT: 5432
+      DB_USER: emp_user
+      DB_PASSWORD: StrongPassw0rd!
+      DB_NAME: employees
 
     volumes:
       - ./apps/api-node/public:/usr/src/app/public:ro
 
-    depends_on:
-      - db
-    restart: unless-stopped
-
-  # ───────────────────────────────────────────────────────────────
-  #  PostgreSQL (Employees DB)
-  # ───────────────────────────────────────────────────────────────
-  db:
-    image: postgres:15
-    container_name: employees-db
-
-    environment:
-      POSTGRES_DB: employees
-      POSTGRES_USER: emp_user
-      POSTGRES_PASSWORD: StrongPassw0rd!
-
-    ports:
-      - "5432:5432"
-
-    volumes:
-      - employees-data:/var/lib/postgresql/data
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U emp_user -d employees"]
-      interval: 30s
-      retries: 5
+    networks:
+      - employees-net
 
     restart: unless-stopped
 
 volumes:
   employees-data:
+
+networks:
+  employees-net:
+    external: true
