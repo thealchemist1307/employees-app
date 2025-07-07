@@ -1,4 +1,4 @@
-version: "3.9"
+# docker-compose.yml (root)
 
 services:
   # ───────────────────────────────────────────────────────────────
@@ -7,21 +7,19 @@ services:
   backend:
     container_name: employees-backend
 
-    # Build the image from the monorepo sub‑folder
     build:
-      context: ./apps/api-node       # Dockerfile lives here
-      dockerfile: Dockerfile         # (override if named differently)
+      context: ./apps/api-node
+      dockerfile: Dockerfile
       args:
         NODE_ENV: production
 
-    # Expose the API + static UI (update if your app binds a different port)
+    # Map container’s 4000 → host’s 4700
     ports:
-      - "8080:8080"
+      - "4700:4000"
 
     env_file:
-      - ./apps/api-node/.env.production   # keep secrets out of Git history
+      - ./apps/api-node/.env   # Make sure this file exists in CI
 
-    # React build gets copied into this folder by the CI job
     volumes:
       - ./apps/api-node/public:/usr/src/app/public:ro
 
