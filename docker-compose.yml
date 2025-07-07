@@ -8,9 +8,9 @@ services:
     container_name: employees-api
     environment:
       DATABASE_URL: postgresql://emp_user:StrongPassw0rd!@employees-db:5432/employees
-      PORT: 4000
+      PORT: 4700
     ports:
-      - "4000:4000"
+      - "4700:4700"
     networks:
       - infra
 
