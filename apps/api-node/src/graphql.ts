@@ -2,7 +2,7 @@
 console.log("→ DATABASE_URL:", process.env.DATABASE_URL);
 
 import { gql } from "apollo-server-express";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import {
   SORT_FIELDS,
   SORT_DIRECTIONS,
@@ -235,7 +235,7 @@ export const resolvers = {
       const { firstName, lastName, email, phone, company, department, position, location, dateOfBirth, status, role } = input;
       const emailLower = email.toLowerCase();
       const password = await hashPassword('password123');
-      return await prisma.$transaction(async (prisma) => {
+      return await prisma.$transaction(async (prisma: Prisma.TransactionClient) => {
         const user = await prisma.user.create({
           data: { email: emailLower, name: firstName + ' ' + lastName, role, password }
         });

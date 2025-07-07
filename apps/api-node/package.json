@@ -20,7 +20,8 @@
     "graphql-tag": "^2.12.6",
     "jsonwebtoken": "^9.0.2",
     "prisma": "^6.11.1",
-    "react-datepicker": "^8.4.0"
+    "react-datepicker": "^8.4.0",
+    "turbo": "^2.5.4"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

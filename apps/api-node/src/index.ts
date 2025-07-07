@@ -11,7 +11,13 @@ import { verifyToken, JWTPayload } from "./utils/jwt";
 
 async function start() {
   const app = express();
-  app.use(cors());
+  app.use(cors({
+    origin: [
+      'https://employeesapp.shauqtechnology.in',
+      'http://192.168.1.12'
+    ],
+    credentials: true
+  }));
   app.get("/health", (_, res) => res.json({ ok: true }));
 
   const server = new ApolloServer({ 
@@ -44,8 +50,8 @@ async function start() {
     res.sendFile(path.join(__dirname, "../public/index.html"));
   });
 
-  app.listen(4000, () =>
-    console.log("🚀  API ready at http://localhost:4000/graphql")
+  app.listen(4700, () =>
+    console.log("🚀  API ready at http://localhost:4700/graphql")
   );
 }
 start(); 
