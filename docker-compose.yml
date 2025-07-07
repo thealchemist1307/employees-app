@@ -1,35 +1,24 @@
 # docker-compose.yml (root)
 
+version: "3.9"
+
 services:
   # Node.js API + Static UI
   backend:
-    container_name: employees-backend
-
-    build:
-      context: ./apps/api-node
-      dockerfile: Dockerfile
-      args:
-        NODE_ENV: production
-
-    # Map container's 4000 → host's 4700
+    container_name: employees-api
+    build: ./apps/api-node
+    depends_on:
+      - db                 # still okay—Compose resolves it internally
+    environment:
+      DATABASE_URL: postgres://emp_user:StrongPassw0rd!@employees-db:5432/employees
+      PORT: 4000
     ports:
       - "4700:4000"
-
-    environment:
-      NODE_ENV: production
-      PORT: 4000
-      DB_HOST: employees-db      # external container name
-      DB_PORT: 5432
-      DB_USER: emp_user
-      DB_PASSWORD: StrongPassw0rd!
-      DB_NAME: employees
-
-    volumes:
-      - ./apps/api-node/public:/usr/src/app/public:ro
-
     networks:
-      - employees-net
+      - infra              # join the same network
+
+  # other services (frontend, redis, etc.) just need the same `networks:` stanza
 
 networks:
-  employees-net:
-    driver: bridge
+  infra:
+    external: true
