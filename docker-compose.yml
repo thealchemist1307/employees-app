@@ -8,16 +8,16 @@ services:
     container_name: employees-backend
 
     build:
-      context: ./apps/api-node
-      dockerfile: Dockerfile
+      context: .                          # repo root
+      dockerfile: apps/api-node/Dockerfile
       args:
         NODE_ENV: production
 
-    # Map container’s 4000 → host’s 4700
+    # Map container's 4000 → host's 4700
     ports:
       - "4700:4000"
 
-    # Environment variables come from the runner’s
+    # Environment variables come from the runner's
     # process environment or the project‑root .env file (loaded automatically by Compose).
     environment:
       NODE_ENV: production
