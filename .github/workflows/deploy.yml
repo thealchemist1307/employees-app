@@ -3,27 +3,44 @@ name: CI/CD on Self-Hosted Runner
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
-    runs-on: [self-hosted, shauqserver]   # pin to your runner
+    runs-on: [self-hosted, shauqserver]
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: apps/web/package-lock.json
 
       - name: Build React UI
-        working-directory: ./apps/web
+        working-directory: apps/web
         run: |
+          set -euo pipefail
           npm ci
           npm run build
 
       - name: Copy UI into backend
         run: |
-          rm -rf ./apps/api-node/public
-          mkdir -p ./apps/api-node/public
-          cp -R ./apps/web/dist/* ./apps/api-node/public/
+          set -euo pipefail
+          rm -rf apps/api-node/public
+          mkdir -p apps/api-node/public
+          cp -R apps/web/dist/* apps/api-node/public/
+
+      - name: Tear down previous stack
+        run: docker-compose down --remove-orphans
 
       - name: Build & deploy Docker images
         run: |
+          set -euo pipefail
           docker-compose build --no-cache backend
-          docker-compose up -d 
+          docker-compose up -d
