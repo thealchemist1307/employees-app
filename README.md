@@ -118,7 +118,6 @@ npm start
 - The backend is configured to run on port **4700**.
 - CORS is enabled for:
   - `https://employeesapp.shauqtechnology.in`
-  - `http://192.168.1.12`
 
 ---
 
