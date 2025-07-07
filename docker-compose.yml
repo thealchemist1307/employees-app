@@ -1,7 +1,5 @@
 # docker-compose.yml (root)
 
-version: "3.9"
-
 services:
   # Node.js API + Static UI
   backend:
@@ -20,7 +18,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      DB_HOST: employees-db
+      DB_HOST: employees-db      # external container name
       DB_PORT: 5432
       DB_USER: emp_user
       DB_PASSWORD: StrongPassw0rd!
@@ -28,9 +26,6 @@ services:
 
     volumes:
       - ./apps/api-node/public:/usr/src/app/public:ro
-
-    depends_on:
-      - employees-db
 
     networks:
       - employees-net
