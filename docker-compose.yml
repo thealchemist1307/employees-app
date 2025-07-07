@@ -31,13 +31,5 @@ services:
       - ./apps/api-node/public:/usr/src/app/public:ro
 
     networks:
-      - employees-net
-
-    restart: unless-stopped
-
-volumes:
-  employees-data:
-
-networks:
   employees-net:
-    external: true
+    driver: bridge
