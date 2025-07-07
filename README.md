@@ -23,19 +23,21 @@ employees-app/
 │   └── web/           # Frontend (React, Vite, Tailwind)
 ├── package.json       # Monorepo root
 ├── tsconfig.base.json # Shared TypeScript config
+├── docker-compose.yml # Docker Compose for deployment
 └── ...
 ```
 
 ---
 
 ## Prerequisites
-- Node.js (v22.x recommended, managed via nvm)
+- Node.js (v22.x recommended, managed via nvm) **(for local dev only)**
 - npm (comes with Node.js)
+- Docker & Docker Compose (for production/deployment)
 - PostgreSQL database
 
 ---
 
-## Setup
+## Setup (Local Development)
 
 1. **Clone the repository:**
    ```bash
@@ -85,118 +87,66 @@ npm run dev
 
 ---
 
-## Production Build & Serve
+## Production & Deployment (Docker + Docker Compose)
 
-### 1. Build Backend
-```bash
-cd apps/api-node
-npm run build
-```
+### 1. Build and Run with Docker Compose
 
-### 2. Build Frontend
-```bash
-cd apps/web
-npm run build
-```
-- This outputs static files to `apps/web/dist`.
+- Make sure your `infra` Docker network exists (or create it with `docker network create infra`).
+- Make sure your PostgreSQL database is running and accessible to the container (see `DATABASE_URL` in `docker-compose.yml`).
 
-### 3. Deploy Frontend to Backend
 ```bash
-cp -r apps/web/dist/* apps/api-node/public/
+docker compose up --build -d
 ```
-
-### 4. Start Backend in Production
-```bash
-cd apps/api-node
-npm start
-```
+- This will build the backend Docker image, copy the frontend build into the backend, and start the backend container on port 4000.
 - The backend will serve the frontend at its root URL and the GraphQL API at `/graphql`.
+
+### 2. Stopping and Removing Containers
+```bash
+docker compose down --remove-orphans
+```
+
+---
+
+## CI/CD Automation (GitHub Actions)
+
+This project uses GitHub Actions for automated build and deployment on push to the `main` branch.
+
+- The workflow is defined in `.github/workflows/deploy.yml`.
+- Steps include:
+  - Install dependencies
+  - Build the frontend
+  - Copy the frontend build into the backend
+  - Tear down any previous Docker stack
+  - Build and deploy the backend Docker image
+  - Start the backend container with Docker Compose
+
+**No manual steps are needed for deployment if you push to `main`!**
 
 ---
 
 ## Running on a Custom Port & CORS
-- The backend is configured to run on port **4700**.
+- The backend is configured to run on port **4000** (as set in `docker-compose.yml`).
 - CORS is enabled for:
   - `https://employeesapp.shauqtechnology.in`
 
 ---
 
-## Systemd Service (Auto-Restart on Reboot)
-
-A systemd service is set up to ensure the backend restarts on reboot or crash.
-
-**Service file:** `/etc/systemd/system/employees-api.service`
-
-```
-[Unit]
-Description=Employees API Node.js Backend
-After=network.target
-
-[Service]
-Type=simple
-User=nishit
-WorkingDirectory=/home/nishit/employees-app/apps/api-node
-ExecStart=/home/nishit/.nvm/versions/node/v22.17.0/bin/npm start
-Restart=always
-Environment=NODE_ENV=production
-Environment=PORT=4700
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Enable and start the service:**
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable employees-api
-sudo systemctl start employees-api
-```
-
-**Check status:**
-```bash
-sudo systemctl status employees-api
-```
-
-**View logs:**
-```bash
-sudo journalctl -u employees-api -f
-```
-
----
-
-## Deployment on Subdomain
+## Deployment on Subdomain (with Cloudflare)
 
 The app is deployed on your own subdomain:
 - **Frontend & Backend:** [https://employeesapp.shauqtechnology.in/](https://employeesapp.shauqtechnology.in/)
 
-**DNS & Reverse Proxy:**
-- The subdomain should point to your server's public IP.
-- Use Nginx or Caddy as a reverse proxy to forward HTTPS traffic to your backend's port 4700.
-- Example Nginx config:
-  ```nginx
-  server {
-    listen 443 ssl;
-    server_name employeesapp.shauqtechnology.in;
-
-    ssl_certificate /etc/letsencrypt/live/employeesapp.shauqtechnology.in/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/employeesapp.shauqtechnology.in/privkey.pem;
-
-    location / {
-      proxy_pass http://localhost:4700;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto $scheme;
-    }
-  }
-  ```
+**DNS & Proxy:**
+- The subdomain is managed via Cloudflare, which provides DNS, HTTPS, and reverse proxying to your backend's port 4000.
+- Cloudflare handles SSL termination and forwards requests to your server securely.
+- No Nginx or Caddy configuration is required; simply point your subdomain's DNS A record to your server's public IP and enable the Cloudflare proxy (orange cloud).
 
 ---
 
 ## Notes
-- Make sure your database is running and accessible from the backend.
+- Make sure your database is running and accessible from the backend container.
 - Update environment variables as needed for production security.
-- For any changes to the backend, rebuild and restart the systemd service.
+- For any changes to the backend or frontend, just push to `main` and GitHub Actions will redeploy automatically.
 
 ---
 
