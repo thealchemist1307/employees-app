@@ -1,25 +1,21 @@
-##########################
-#  Node API production   #
-##########################
+# /home/nishit/employees-app/apps/api-node/Dockerfile
 
 FROM node:20-alpine
-
-# 1. Create app directory
 WORKDIR /usr/src/app
 
-# 2. Install production dependencies using the root lockfile
+# Install production dependencies
 COPY package-lock.json ./
 COPY apps/api-node/package*.json ./
 RUN npm ci --production
 
-# 3. Copy only the backend source
-COPY apps/api-node/ .      # keeps the image small
+# Copy source (no inline comments!)
+COPY apps/api-node/. ./
 
-# 4. Compile TypeScript / Vite output
-RUN npm run build          # needs a "build" script in that package.json
+# Build transpiled output
+RUN npm run build
 
-# 5. Expose the internal port (matches PORT=4000 in compose)
+# Expose application port
 EXPOSE 4000
 
-# 6. Start the server
+# Start the app
 CMD ["node", "dist/index.js"]
