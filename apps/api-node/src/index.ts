@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import path from "path";
 
 dotenv.config();
 
@@ -35,6 +36,13 @@ async function start() {
   
   await server.start();
   server.applyMiddleware({ app: app as any, path: "/graphql" });
+
+  app.use(express.static(path.join(__dirname, "../public")));
+
+  // For SPA: serve index.html for any unknown route (after API routes)
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../public/index.html"));
+  });
 
   app.listen(4000, () =>
     console.log("🚀  API ready at http://localhost:4000/graphql")
