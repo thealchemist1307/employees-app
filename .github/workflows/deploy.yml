@@ -16,19 +16,23 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Use Node without npm cache to avoid missing‑file errors
+      # Set up Node (no caching for now)
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      # Install all workspace/root dependencies so every package is present
+      - name: Install root dependencies
+        shell: bash -euxo pipefail {0}
+        run: |
+          echo "::group::npm install (root)"
+          npm install
+          echo "::endgroup::"
 
       - name: Build React UI
         working-directory: apps/web
         shell: bash -euxo pipefail {0}
         run: |
-          echo "::group::npm ci"
-          npm ci
-          echo "::endgroup::"
-
           echo "::group::npm run build"
           npm run build
           echo "::endgroup::"
