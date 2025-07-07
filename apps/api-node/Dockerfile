@@ -16,7 +16,7 @@ COPY tsconfig.base.json /usr/tsconfig.base.json
 COPY apps/api-node/. ./
 
 # Build transpiled output
-RUN npm run build
+RUN npx prisma generate && npm run build
 
 # Expose application port
 EXPOSE 4000
