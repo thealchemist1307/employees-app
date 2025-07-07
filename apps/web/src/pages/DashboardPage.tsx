@@ -118,6 +118,7 @@ export default function DashboardPage() {
   const {
     data: tileData,
     isLoading: tileLoading,
+    isFetchingNextPage,
     fetchNextPage,
     hasNextPage,
   } = useInfiniteQuery<EmployeesPageResult, Error>({
@@ -389,14 +390,16 @@ export default function DashboardPage() {
           ) : (
             <>
               <div className="mb-2 text-sm text-gray-600">Total cards rendered: {uniqueTileEmployees.length}</div>
-              <EmployeeTiles employees={uniqueTileEmployees} onCardClick={(emp) => { setSelectedEmployee(emp); setDetailOpen(true); }} />
-              {(tileLoading) && (
-                <div className="flex flex-col items-center py-8">
-                  <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
-                  <span className="mt-2 text-blue-700 font-medium">Loading more…</span>
-                </div>
-              )}
-              {uniqueTileEmployees.length === 0 && !tileLoading && (
+              <div>
+                <EmployeeTiles employees={uniqueTileEmployees} onCardClick={(emp) => { setSelectedEmployee(emp); setDetailOpen(true); }} />
+                {isFetchingNextPage && (
+                  <div className="flex flex-col items-center py-8 w-full">
+                    <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                    <span className="mt-2 text-blue-700 font-medium">Loading more…</span>
+                  </div>
+                )}
+              </div>
+              {uniqueTileEmployees.length === 0 && !isFetchingNextPage && (
                 <div className="text-center text-gray-500">No employees found.</div>
               )}
             </>
