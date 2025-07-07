@@ -17,8 +17,13 @@ services:
     ports:
       - "4700:4000"
 
-    env_file:
-      - ./apps/api-node/.env   # Make sure this file exists in CI
+    # Environment variables come from the runner’s
+    # process environment or the project‑root .env file (loaded automatically by Compose).
+    environment:
+      NODE_ENV: production
+      PORT: 4000   # Express listening port inside the container
+      # Add any other vars here, or set them as GH Actions secrets and
+      # export before running `docker compose`.
 
     volumes:
       - ./apps/api-node/public:/usr/src/app/public:ro
