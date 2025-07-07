@@ -1,22 +1,24 @@
-name: CI/CD on Self-Hosted Runner
+name: CI/CD on Self‑Hosted Runner
 
 on:
   push:
     branches: [main]
   workflow_dispatch: {}
 
+# Make sure only one deployment per branch happens at a time
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-deploy:
-    # Same labels; just be sure your re-registered runner carries them
-    runs-on: [self-hosted, shauqserver]
+    # Simplified: match ANY self‑hosted runner in the repo/org
+    runs-on: self-hosted
 
     steps:
       - uses: actions/checkout@v3
 
+      # Node & npm cache speeds up subsequent runs
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -46,7 +48,7 @@ jobs:
         shell: bash -euxo pipefail {0}
         run: docker compose down --remove-orphans
 
-      - name: Build & deploy Docker images
+      - name: Build & deploy Docker image
         shell: bash -euxo pipefail {0}
         run: |
           echo "::group::docker compose build"
