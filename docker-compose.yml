@@ -1,23 +1,16 @@
-# docker-compose.yml (root)
-
 version: "3.9"
 
 services:
-  # Node.js API + Static UI
   backend:
-    container_name: employees-api
     build: ./apps/api-node
-    depends_on:
-      - db                 # still okay—Compose resolves it internally
+    container_name: employees-api
     environment:
       DATABASE_URL: postgres://emp_user:StrongPassw0rd!@employees-db:5432/employees
       PORT: 4000
     ports:
-      - "4700:4000"
+      - "4000:4000"
     networks:
-      - infra              # join the same network
-
-  # other services (frontend, redis, etc.) just need the same `networks:` stanza
+      - infra
 
 networks:
   infra:
