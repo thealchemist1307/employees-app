@@ -30,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       apiClient.setToken(result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
       localStorage.setItem("token", result.token);
+      localStorage.setItem("employeeViewMode", "grid");
     } catch (error) {
       console.error("Login failed:", error);
       throw error;

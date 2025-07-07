@@ -23,13 +23,16 @@ const prisma = new PrismaClient();
 /* GraphQL SDL -------------------------------------------------- */
 export const typeDefs = gql`
   enum Role       { ADMIN EMPLOYEE }
-  enum SortField  { name company department status }
+  enum SortField  { name company department status created updated }
   enum SortDir    { asc desc }
+  enum EmployeeStatus { Active On_Leave Resigned }
 
   type User {
     id: ID!
     email: String!
     name: String!
+    firstName: String!
+    lastName: String!
     role: Role!
     createdAt: String!
     updatedAt: String!
@@ -37,7 +40,8 @@ export const typeDefs = gql`
 
   type Employee {
     id: ID!
-    name: String!
+    firstName: String!
+    lastName: String!
     email: String!
     phone: String!
     company: String!
@@ -45,7 +49,7 @@ export const typeDefs = gql`
     position: String!
     location: String!
     dateOfBirth: String!
-    status: String!
+    status: EmployeeStatus!
     flagged: Boolean
     created: String
     updated: String
@@ -66,8 +70,9 @@ export const typeDefs = gql`
     employees(
       page: Int = 1
       size: Int = 10
-      sortField: SortField = name
+      sortField: SortField = firstName
       sortDir: SortDir = asc
+      search: String
     ): EmployeesPage!
     employee(id: ID!): Employee
   }
@@ -85,7 +90,8 @@ export const typeDefs = gql`
   }
 
   input EmployeeInput {
-    name: String!
+    firstName: String!
+    lastName: String!
     email: String!
     phone: String!
     company: String!
@@ -93,7 +99,8 @@ export const typeDefs = gql`
     position: String!
     location: String!
     dateOfBirth: String!
-    status: String!
+    status: EmployeeStatus!
+    role: Role!
   }
 
   type Mutation {
@@ -134,13 +141,15 @@ export const resolvers = {
       {
         page = 1,
         size = 10,
-        sortField = "name",
+        sortField = "firstName",
         sortDir = "asc",
+        search = "",
       }: {
         page: number;
         size: number;
         sortField: SortFieldString;
         sortDir: SortDirString;
+        search?: string;
       },
       ctx: Context
     ) => {
@@ -150,13 +159,29 @@ export const resolvers = {
         throw new Error("Invalid sort parameters");
       }
       const skip = (page - 1) * size;
+      // Only allow searching on visible fields for EMPLOYEE users
+      const isAdmin = ctx.user?.role === "ADMIN";
+      // Only used for search in employees query:
+      const searchFields = [
+        { firstName: { contains: search, mode: 'insensitive' as const } },
+        { lastName: { contains: search, mode: 'insensitive' as const } },
+        { email: { contains: search, mode: 'insensitive' as const } },
+        { department: { contains: search, mode: 'insensitive' as const } },
+        { position: { contains: search, mode: 'insensitive' as const } },
+      ];
+      const where = search
+        ? {
+            OR: searchFields,
+          }
+        : undefined;
       const [items, total] = await Promise.all([
         prisma.employee.findMany({
           skip,
           take: size,
           orderBy: { [sortField]: sortDir },
+          where,
         }),
-        prisma.employee.count(),
+        prisma.employee.count({ where }),
       ]);
       return { items, total };
     },
@@ -171,37 +196,54 @@ export const resolvers = {
     /* ---------- Auth ---------- */
     register: async (_: unknown, { input }: { input: any }) => {
       const { email, password, name, role = "EMPLOYEE" } = input;
+      const emailLower = email.toLowerCase();
       if (!ROLES.includes(role as RoleString)) throw new Error("Invalid role");
-      if (await prisma.user.findUnique({ where: { email } })) throw new Error("User already exists");
+      if (await prisma.user.findUnique({ where: { email: emailLower } })) throw new Error("User already exists");
 
       const user = await prisma.user.create({
         data: {
-          email,
+          email: emailLower,
           password: await hashPassword(password),
           name,
           role,
         },
       });
+      const [firstName, ...rest] = user.name.split(' ');
+      const lastName = rest.join(' ');
       return {
-        token: generateToken({ userId: user.id, email, role }),
-        user: { ...user, createdAt: user.createdAt.toISOString(), updatedAt: user.updatedAt.toISOString() },
+        token: generateToken({ userId: user.id, email: emailLower, role }),
+        user: { ...user, firstName, lastName, createdAt: user.createdAt.toISOString(), updatedAt: user.updatedAt.toISOString() },
       };
     },
 
     login: async (_: unknown, { input }: { input: any }) => {
       const { email, password } = input;
-      const user = await prisma.user.findUnique({ where: { email } });
+      const emailLower = email.toLowerCase();
+      const user = await prisma.user.findUnique({ where: { email: emailLower } });
       if (!user || !(await comparePassword(password, user.password))) throw new Error("Invalid credentials");
+      const [firstName, ...rest] = user.name.split(' ');
+      const lastName = rest.join(' ');
       return {
-        token: generateToken({ userId: user.id, email, role: user.role }),
-        user: { ...user, createdAt: user.createdAt.toISOString(), updatedAt: user.updatedAt.toISOString() },
+        token: generateToken({ userId: user.id, email: emailLower, role: user.role }),
+        user: { ...user, firstName, lastName, createdAt: user.createdAt.toISOString(), updatedAt: user.updatedAt.toISOString() },
       };
     },
 
     /* ---------- Employee CRUD ---------- */
-    createEmployee: (_: unknown, { input }: any, ctx: Context) => {
+    createEmployee: async (_: unknown, { input }: any, ctx: Context) => {
       assertAdmin(ctx);
-      return prisma.employee.create({ data: input });
+      const { firstName, lastName, email, phone, company, department, position, location, dateOfBirth, status, role } = input;
+      const emailLower = email.toLowerCase();
+      const password = await hashPassword('password123');
+      return await prisma.$transaction(async (prisma) => {
+        const user = await prisma.user.create({
+          data: { email: emailLower, name: firstName + ' ' + lastName, role, password }
+        });
+        const employee = await prisma.employee.create({
+          data: { firstName, lastName, email: emailLower, phone, company, department, position, location, dateOfBirth: new Date(dateOfBirth), status }
+        });
+        return employee;
+      });
     },
     updateEmployee: (_: unknown, { id, input }: any, ctx: Context) => {
       assertAdmin(ctx);
@@ -220,16 +262,8 @@ export const resolvers = {
   /* ---------- Field Serialisers ---------- */
   Employee: {
     dateOfBirth: (e: any) => e.dateOfBirth.toISOString(),
-    created: (e: any, _: unknown, ctx: Context) => {
-      // Only show created date to admins
-      if (ctx.user?.role !== "ADMIN") return null;
-      return e.created.toISOString();
-    },
-    updated: (e: any, _: unknown, ctx: Context) => {
-      // Only show updated date to admins
-      if (ctx.user?.role !== "ADMIN") return null;
-      return e.updated.toISOString();
-    },
+    created: (e: any, _: unknown, ctx: Context) => ctx.user?.role !== "ADMIN" ? null : e.created.toISOString(),
+    updated: (e: any, _: unknown, ctx: Context) => ctx.user?.role !== "ADMIN" ? null : e.updated.toISOString(),
     flagged: (e: any, _: unknown, ctx: Context) => {
       // Only show flagged status to admins
       if (ctx.user?.role !== "ADMIN") return null;

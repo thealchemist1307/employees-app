@@ -6,7 +6,7 @@
 export const ROLES = ["ADMIN", "EMPLOYEE"] as const;
 export type RoleString = (typeof ROLES)[number];
 
-export const SORT_FIELDS = ["name", "company", "department", "status"] as const;
+export const SORT_FIELDS = ["firstName", "lastName", "company", "department", "status", "created", "updated"] as const;
 export type SortFieldString = (typeof SORT_FIELDS)[number];
 
 export const SORT_DIRECTIONS = ["asc", "desc"] as const;

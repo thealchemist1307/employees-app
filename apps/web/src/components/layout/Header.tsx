@@ -20,6 +20,8 @@ export function Header() {
     navigate("/login");
   };
 
+  const [showEmployeesSubMenu, setShowEmployeesSubMenu] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 flex h-14 w-full items-center justify-between bg-primary px-4 shadow-sm">
       {/* Brand */}
@@ -39,16 +41,21 @@ export function Header() {
             Dashboard
           </Button>
         </Link>
-        <Link to="/employees">
+        <div className="relative group">
           <Button
             variant="ghost"
-            className={`text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary/80 ${
-              location.pathname === "/employees" ? "bg-primary/20" : ""
-            }`}
+            className={`flex items-center text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary/80 ${location.pathname.startsWith("/employees") || location.pathname.startsWith("/departments") ? "bg-primary/20" : ""}`}
           >
             Employees
+            <ChevronDown className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
           </Button>
-        </Link>
+          <div className="absolute left-0 top-full mt-1 w-44 rounded-md border bg-popover shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+            <div className="flex flex-col p-1">
+              <div className="px-4 py-2 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors">All Employees</div>
+              <div className="px-4 py-2 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors">Departments</div>
+            </div>
+          </div>
+        </div>
 
         {/* User dropdown */}
         <div className="relative group">
@@ -92,9 +99,22 @@ export function Header() {
             <Link to="/dashboard" className="text-lg font-medium text-foreground hover:text-primary">
               Dashboard
             </Link>
-            <Link to="/employees" className="text-lg font-medium text-foreground hover:text-primary">
-              Employees
-            </Link>
+            <div className="relative">
+              <button
+                className="flex items-center w-full text-lg font-medium text-foreground hover:text-primary focus:outline-none"
+                onClick={() => setShowEmployeesSubMenu((v) => !v)}
+                aria-expanded={showEmployeesSubMenu}
+              >
+                Employees
+                <ChevronDown className={`ml-1 h-4 w-4 transition-transform duration-200 ${showEmployeesSubMenu ? 'rotate-180' : ''}`} />
+              </button>
+              {showEmployeesSubMenu && (
+                <div className="ml-4 mt-2 flex flex-col gap-2">
+                  <Link to="/employees" className="text-base text-foreground hover:text-primary">All Employees</Link>
+                  <Link to="/departments" className="text-base text-foreground hover:text-primary">Departments</Link>
+                </div>
+              )}
+            </div>
             <div className="border-t pt-4">
               <div className="text-sm text-muted-foreground mb-2">
                 <div className="font-medium">{user?.name}</div>

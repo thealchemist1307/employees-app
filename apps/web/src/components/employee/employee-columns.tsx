@@ -1,22 +1,15 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-
-export type Employee = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  company: { name: string };
-};
+import type { Employee } from "@/lib/api";
 
 export const employeeColumns: ColumnDef<Employee>[] = [
   { accessorKey: "name", header: "Name" },
   { accessorKey: "email", header: "Email" },
   { accessorKey: "phone", header: "Phone" },
   {
-    accessorKey: "company.name",
+    accessorKey: "company",
     header: "Company",
-    cell: ({ row }) => row.original.company?.name ?? "",
+    cell: ({ row }) => row.original.company ?? "",
   },
   {
     id: "actions",

@@ -2,6 +2,8 @@ const API_URL = 'http://localhost:4000/graphql';
 
 export interface User {
   id: string;
+  firstName: string;
+  lastName: string;
   email: string;
   name: string;
   role: 'ADMIN' | 'EMPLOYEE';
@@ -11,7 +13,8 @@ export interface User {
 
 export interface Employee {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   company: string;
@@ -23,6 +26,7 @@ export interface Employee {
   flagged?: boolean | null;
   created?: string | null;
   updated?: string | null;
+  role: "ADMIN" | "EMPLOYEE";
 }
 
 export interface AuthPayload {
@@ -43,7 +47,8 @@ export interface UserInput {
 }
 
 export interface EmployeeInput {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   company: string;
@@ -52,6 +57,7 @@ export interface EmployeeInput {
   location: string;
   dateOfBirth: string;
   status: string;
+  role: "ADMIN" | "EMPLOYEE";
 }
 
 export interface EmployeesPageResult {
@@ -106,6 +112,8 @@ class ApiClient {
           user {
             id
             email
+            firstName
+            lastName
             name
             role
             createdAt
@@ -127,6 +135,8 @@ class ApiClient {
           user {
             id
             email
+            firstName
+            lastName
             name
             role
             createdAt
@@ -146,6 +156,8 @@ class ApiClient {
         me {
           id
           email
+          firstName
+          lastName
           name
           role
           createdAt
@@ -159,13 +171,14 @@ class ApiClient {
   }
 
   // Employee queries
-  async getEmployees(page: number = 1, size: number = 10, sortField: string = 'name', sortDir: string = 'asc'): Promise<EmployeesPageResult> {
+  async getEmployees(page: number = 1, size: number = 10, sortField: string = 'name', sortDir: string = 'asc', search: string = ""): Promise<EmployeesPageResult> {
     const query = `
-      query Employees($page: Int, $size: Int, $sortField: SortField, $sortDir: SortDir) {
-        employees(page: $page, size: $size, sortField: $sortField, sortDir: $sortDir) {
+      query Employees($page: Int, $size: Int, $sortField: SortField, $sortDir: SortDir, $search: String) {
+        employees(page: $page, size: $size, sortField: $sortField, sortDir: $sortDir, search: $search) {
           items {
             id
-            name
+            firstName
+            lastName
             email
             phone
             company
@@ -188,6 +201,7 @@ class ApiClient {
       size,
       sortField,
       sortDir,
+      search,
     });
     return result.employees;
   }
@@ -197,7 +211,8 @@ class ApiClient {
       query Employee($id: ID!) {
         employee(id: $id) {
           id
-          name
+          firstName
+          lastName
           email
           phone
           company
@@ -223,7 +238,8 @@ class ApiClient {
       mutation CreateEmployee($input: EmployeeInput!) {
         createEmployee(input: $input) {
           id
-          name
+          firstName
+          lastName
           email
           phone
           company
@@ -248,7 +264,8 @@ class ApiClient {
       mutation UpdateEmployee($id: ID!, $input: EmployeeInput!) {
         updateEmployee(id: $id, input: $input) {
           id
-          name
+          firstName
+          lastName
           email
           phone
           company
@@ -284,7 +301,8 @@ class ApiClient {
       mutation FlagEmployee($id: ID!, $flag: Boolean!) {
         flagEmployee(id: $id, flag: $flag) {
           id
-          name
+          firstName
+          lastName
           email
           phone
           company

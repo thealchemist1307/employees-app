@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { Employee } from "./employee-columns";
+import type { Employee } from "@/lib/api";
 import { EmployeeCard } from "./EmployeeCard";
 import { EmployeeDetailDialog } from "./EmployeeDetailDialog";
 
@@ -7,48 +7,34 @@ const PAGE_SIZE = 12;
 
 type Props = {
   employees: Employee[];
+  onEdit: (emp: Employee) => void;
+  onDelete: (emp: Employee) => void;
 };
 
-export function EmployeesTiles({ employees }: Props) {
+export function EmployeesTiles({ employees, onEdit, onDelete }: Props) {
   const [selected, setSelected] = React.useState<Employee | null>(null);
-  const [visibleCount, setVisibleCount] = React.useState(PAGE_SIZE);
-  const loaderRef = React.useRef<HTMLDivElement | null>(null);
-
-  React.useEffect(() => {
-    setVisibleCount(PAGE_SIZE); // reset on new data
-  }, [employees]);
-
-  React.useEffect(() => {
-    if (!loaderRef.current) return;
-    const observer = new window.IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && visibleCount < employees.length) {
-          setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, employees.length));
-        }
-      },
-      { rootMargin: "200px" }
-    );
-    observer.observe(loaderRef.current);
-    return () => observer.disconnect();
-  }, [employees, visibleCount]);
+  const [editMode, setEditMode] = React.useState(false);
 
   return (
     <>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {employees.slice(0, visibleCount).map((emp) => (
+        {employees.map((emp, idx) => (
           <EmployeeCard
-            key={emp.id}
+            key={`${emp.id}-${idx}`}
             emp={emp}
-            onSelect={() => setSelected(emp)}
-            onEdit={() => alert(`Edit ${emp.name}`)}
-            onDelete={() => alert(`Delete ${emp.name}`)}
-            onFlag={() => alert(`Flag ${emp.name}`)}
+            onSelect={() => { setSelected(emp); setEditMode(false); }}
+            onEdit={() => { setSelected(emp); setEditMode(true); onEdit(emp); }}
+            onDelete={() => onDelete(emp)}
+            onFlag={() => alert(`Flag ${emp.firstName} ${emp.lastName}`)}
           />
         ))}
       </div>
-      {/* Loader sentinel for infinite scroll */}
-      <div ref={loaderRef} style={{ height: 1 }} />
-      <EmployeeDetailDialog emp={selected} onClose={() => setSelected(null)} />
+      <EmployeeDetailDialog
+        employee={selected}
+        open={!!selected}
+        onClose={() => setSelected(null)}
+        mode={editMode ? "edit" : "view"}
+      />
     </>
   );
 } 
