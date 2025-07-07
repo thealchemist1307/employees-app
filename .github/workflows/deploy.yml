@@ -1,0 +1,29 @@
+name: CI/CD on Self-Hosted Runner
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: [self-hosted, shauqserver]   # pin to your runner
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build React UI
+        working-directory: ./apps/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Copy UI into backend
+        run: |
+          rm -rf ./apps/api-node/public
+          mkdir -p ./apps/api-node/public
+          cp -R ./apps/web/dist/* ./apps/api-node/public/
+
+      - name: Build & deploy Docker images
+        run: |
+          docker-compose build --no-cache backend
+          docker-compose up -d 
