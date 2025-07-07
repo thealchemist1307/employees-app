@@ -6,12 +6,12 @@ services:
     container_name: employees-backend
 
     build:
-      context: .
-      dockerfile: apps/api-node/Dockerfile
+      context: ./apps/api-node
+      dockerfile: Dockerfile
       args:
         NODE_ENV: production
 
-    # Map container’s 4000 → host’s 4700
+    # Map container's 4000 → host's 4700
     ports:
       - "4700:4000"
 
