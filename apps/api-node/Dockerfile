@@ -8,6 +8,9 @@ FROM node:20-alpine AS base
 WORKDIR /usr/src/app
 
 # 2. Install production deps
+# Copy the root lockfile so npm ci has a deterministic manifest
+ARG PROJECT_ROOT=../..
+COPY ${PROJECT_ROOT}/package-lock.json ./
 COPY package*.json ./
 RUN npm ci --production
 
