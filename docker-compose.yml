@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  # ───────────────────────────────────────────────────────────────
+  #  Node.js API + Static UI
+  # ───────────────────────────────────────────────────────────────
+  backend:
+    container_name: employees-backend
+
+    # Build the image from the monorepo sub‑folder
+    build:
+      context: ./apps/api-node       # Dockerfile lives here
+      dockerfile: Dockerfile         # (override if named differently)
+      args:
+        NODE_ENV: production
+
+    # Expose the API + static UI (update if your app binds a different port)
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - ./apps/api-node/.env.production   # keep secrets out of Git history
+
+    # React build gets copied into this folder by the CI job
+    volumes:
+      - ./apps/api-node/public:/usr/src/app/public:ro
+
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # ───────────────────────────────────────────────────────────────
+  #  PostgreSQL (Employees DB)
+  # ───────────────────────────────────────────────────────────────
+  db:
+    image: postgres:15
+    container_name: employees-db
+
+    environment:
+      POSTGRES_DB: employees
+      POSTGRES_USER: emp_user
+      POSTGRES_PASSWORD: StrongPassw0rd!
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - employees-data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U emp_user -d employees"]
+      interval: 30s
+      retries: 5
+
+    restart: unless-stopped
+
+volumes:
+  employees-data:
