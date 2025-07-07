@@ -9,7 +9,6 @@ WORKDIR /usr/src/app
 
 # 2. Install production dependencies using the root lockfile
 COPY package*.json ./
-COPY ../package-lock.json ./
 RUN npm ci --production
 
 # 3. Copy only the backend source
