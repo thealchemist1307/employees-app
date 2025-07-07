@@ -13,10 +13,13 @@ COPY apps/api-node/package*.json ./
 RUN npm ci --production
 
 # 3. Copy only the backend source
-COPY apps/api-node/ .
+COPY . .
 
-# 4. Expose internal port (matches PORT env var)
+# 4. Compile TypeScript / Vite output
+RUN npm run build
+
+# 5. Expose the internal port (matches PORT=4000 in compose)
 EXPOSE 4000
 
-# 5. Start the server
+# 6. Start the server
 CMD ["node", "dist/index.js"] 
