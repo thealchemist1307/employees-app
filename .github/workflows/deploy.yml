@@ -11,6 +11,7 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    # Same labels; just be sure your re-registered runner carries them
     runs-on: [self-hosted, shauqserver]
 
     steps:
@@ -19,28 +20,39 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: apps/web/package-lock.json
 
       - name: Build React UI
         working-directory: apps/web
+        shell: bash -euxo pipefail {0}
         run: |
-          set -euo pipefail
+          echo "::group::npm ci"
           npm ci
+          echo "::endgroup::"
+
+          echo "::group::npm run build"
           npm run build
+          echo "::endgroup::"
 
       - name: Copy UI into backend
+        shell: bash -euxo pipefail {0}
         run: |
-          set -euo pipefail
           rm -rf apps/api-node/public
           mkdir -p apps/api-node/public
           cp -R apps/web/dist/* apps/api-node/public/
 
       - name: Tear down previous stack
-        run: docker-compose down --remove-orphans
+        shell: bash -euxo pipefail {0}
+        run: docker compose down --remove-orphans
 
       - name: Build & deploy Docker images
+        shell: bash -euxo pipefail {0}
         run: |
-          set -euo pipefail
-          docker-compose build --no-cache backend
-          docker-compose up -d
+          echo "::group::docker compose build"
+          docker compose build --no-cache --progress=plain backend
+          echo "::endgroup::"
+
+          echo "::group::docker compose up"
+          docker compose up -d
+          echo "::endgroup::"
