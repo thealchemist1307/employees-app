@@ -8,7 +8,10 @@ COPY package-lock.json ./
 COPY apps/api-node/package*.json ./
 RUN npm ci --production
 
-# Copy source (no inline comments!)
+# Copy root TS config base for monorepo
+COPY tsconfig.base.json /
+
+# Copy source and local TS config
 COPY apps/api-node/. ./
 
 # Build transpiled output
