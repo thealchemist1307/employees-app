@@ -17,11 +17,10 @@ services:
     ports:
       - "4700:4000"
 
-    # Environment variables connect to the *existing* Postgres container
     environment:
       NODE_ENV: production
       PORT: 4000
-      DB_HOST: employees-db          # name of the already‑running DB container
+      DB_HOST: employees-db
       DB_PORT: 5432
       DB_USER: emp_user
       DB_PASSWORD: StrongPassw0rd!
@@ -30,6 +29,12 @@ services:
     volumes:
       - ./apps/api-node/public:/usr/src/app/public:ro
 
+    depends_on:
+      - employees-db
+
     networks:
+      - employees-net
+
+networks:
   employees-net:
     driver: bridge
