@@ -9,7 +9,8 @@ COPY apps/api-node/package*.json ./
 RUN npm ci --production
 
 # Copy root TS config base for monorepo
-COPY tsconfig.base.json /
+COPY tsconfig.base.json /usr/tsconfig.base.json
+
 
 # Copy source and local TS config
 COPY apps/api-node/. ./
